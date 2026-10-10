@@ -1,0 +1,28 @@
+# Any VPS (Hetzner, DigitalOcean, AWS Lightsail…): install Docker, point your domain's DNS to the server,
+# edit DOMAIN + secrets below, then:  docker compose up -d
+# Caddy obtains and renews the HTTPS certificate automatically.
+services:
+  api:
+    build: ../backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PUBLIC_URL: https://api.example.com          # ← your domain
+      JWT_SECRET: change-me-to-a-long-random-string # ← openssl rand -hex 32
+      ADMIN_EMAILS: you@example.com
+      RESEND_API_KEY: ""
+      SIGHTENGINE_USER: ""
+      SIGHTENGINE_SECRET: ""
+    volumes:
+      - query-data:/data
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+    depends_on: [api]
+volumes:
+  query-data:
+  caddy-data:

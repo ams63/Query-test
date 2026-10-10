@@ -1,0 +1,7 @@
+{
+  "CFBundleDisplayName": "Query",
+  "NSCameraUsageDescription": "Query uses the camera to take photos and videos for your questions.",
+  "NSPhotoLibraryUsageDescription": "Query needs your photos to attach pictures and videos to questions.",
+  "NSMicrophoneUsageDescription": "Query uses the microphone so you can record voice questions and answers.",
+  "NSLocationWhenInUseUsageDescription": "Query uses your location to attach places to questions and show questions near you."
+}

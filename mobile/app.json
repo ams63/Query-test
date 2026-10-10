@@ -1,0 +1,137 @@
+{
+  "expo": {
+    "name": "Query",
+    "slug": "query",
+    "scheme": "query",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "extra": {
+      "apiUrl": "http://10.0.2.2:4000",
+      "supportsRTL": true,
+      "privacyPolicyUrl": "https://YOUR-API-DOMAIN/privacy",
+      "webUrl": "https://YOUR-DOMAIN",
+      "googleWebClientId": "",
+      "googleIosClientId": "",
+      "linkedinClientId": "",
+      "router": {},
+      "eas": {
+        "projectId": "a11ef62f-e026-4f6d-9c19-a6c69ef94cae"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-video",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Query uses the microphone so you can record voice questions and answers."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Query uses your location to attach places to questions and show questions near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Query needs your photos to attach pictures and videos to questions.",
+          "cameraPermission": "Query uses the camera to take photos and videos for questions."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0891B2"
+        }
+      ],
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
+        }
+      ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.query.app",
+      "supportsTablet": false,
+      "config": {
+        "googleMapsApiKey": ""
+      },
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
+      },
+      "usesAppleSignIn": true,
+      "associatedDomains": [
+        "applinks:YOUR-DOMAIN"
+      ]
+    },
+    "android": {
+      "package": "com.query.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      },
+      "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "YOUR-DOMAIN",
+              "pathPrefix": "/q"
+            },
+            {
+              "scheme": "https",
+              "host": "YOUR-DOMAIN",
+              "pathPrefix": "/i"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "description": "Query — Q&A community: ask by category, get answers, Lost & Found.",
+    "locales": {
+      "ar": "./locales/ar.json",
+      "tr": "./locales/tr.json",
+      "es": "./locales/es.json",
+      "en": "./locales/en.json"
+    }
+  }
+}

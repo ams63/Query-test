@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Query — استوديو المحتوى</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--p:#0891B2;--ink:#15202B;--muted:#65758A;--bg:#F4F6F8;--card:#fff;--line:#E1E7ED}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'IBM Plex Sans Arabic',system-ui,Tahoma,sans-serif}
+header{background:#0E7490;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}header b{font-size:22px;direction:ltr;unicode-bidi:isolate}header b span{color:#F5A623}
+main{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:16px;padding:16px;max-width:1300px;margin:0 auto}@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}.list{max-height:78vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.item{border:1.5px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;background:var(--card);text-align:start;font:inherit;color:inherit}.item.on{border-color:var(--p);background:#E0F7FA}
+.item small{color:var(--muted)}label{font-weight:600;display:block;margin:8px 0 4px}select,input,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+textarea{min-height:120px}.row{display:flex;gap:8px;flex-wrap:wrap}button.b{padding:10px 14px;border-radius:12px;border:0;background:var(--p);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button.g{background:#E0F7FA;color:var(--p)}canvas{width:100%;max-width:420px;border-radius:14px;box-shadow:0 10px 30px -12px rgba(0,0,0,.35);display:block;margin:0 auto}
+#login{max-width:380px;margin:60px auto}.msg{padding:10px;border-radius:10px;background:#E0F7FA;margin-top:8px;white-space:pre-wrap}.err{background:#FEF2F2;color:#991B1B}
+</style>
+</head>
+<body>
+<header><b>Query<span>?</span></b><span>استوديو المحتوى — صور جاهزة لإنستغرام وسناب وتيك توك وفيسبوك وX وواتساب</span></header>
+
+<section id="login" class="card" hidden>
+  <h2>دخول المشرف</h2>
+  <label for="em">البريد</label><input id="em" type="email" autocomplete="email">
+  <label for="pw">كلمة المرور</label><input id="pw" type="password" autocomplete="current-password">
+  <div style="margin-top:12px"><button class="b" id="doLogin">دخول</button></div><div id="loginMsg"></div>
+</section>
+
+<main id="app" hidden>
+  <section class="card">
+    <div class="row"><select id="days" aria-label="الفترة"><option value="7">آخر 7 أيام</option><option value="14" selected>آخر 14 يوماً</option><option value="30">آخر 30 يوماً</option><option value="365">السنة</option></select>
+      <button class="b g" id="reload">تحديث</button></div>
+    <p style="color:var(--muted);font-size:13px">اختر سؤالاً لتحويله إلى صورة جاهزة للنشر:</p>
+    <div class="list" id="items"></div>
+  </section>
+  <section class="card">
+    <div class="row">
+      <div style="flex:1;min-width:140px"><label for="fmt">المقاس</label><select id="fmt"><option value="feed">منشور 4:5 (1080×1350)</option><option value="story">قصة/ريلز 9:16 (1080×1920)</option><option value="square">مربع 1:1 (1080×1080)</option></select></div>
+      <div style="flex:1;min-width:120px"><label for="lang">لغة التصميم</label><select id="lang"><option value="ar">العربية</option><option value="en">English</option><option value="tr">Türkçe</option><option value="es">Español</option></select></div>
+      <div style="flex:1;min-width:140px"><label for="src">المنصة (لتتبع الرابط)</label><select id="src"><option>instagram</option><option>snapchat</option><option>tiktok</option><option>facebook</option><option>x</option><option>whatsapp</option></select></div>
+    </div>
+    <div style="margin:14px 0"><canvas id="cv" width="1080" height="1350" aria-label="معاينة الصورة"></canvas></div>
+    <label for="cap">النص المرافق (يتغير حسب اللغة والمنصة)</label><textarea id="cap"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="b" id="dl">⬇ تحميل الصورة</button><button class="b g" id="copy">نسخ النص</button>
+      <button class="b g" id="pubFb">نشر على صفحة فيسبوك</button><button class="b g" id="pubIg">نشر على إنستغرام</button>
+    </div>
+    <div id="out"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const api = async (path, opts = {}) => {
+    const res = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + (localStorage.getItem('qtoken') || '') } });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(j.error || res.status), { code: j.error, status: res.status });
+    return j;
+  };
+  const TXT = {
+    ar: { cat: (x) => x.name_ar, answer: 'أفضل إجابة', noAns: 'ما رأيك أنت؟ شارك بإجابتك', cta: 'أجب على Query', dl: 'حمّل التطبيق — الرابط في البايو', stars: 'تقييم',
+      cap: (x, link, src) => `❓ ${x.content}\n\n${x.answer ? '💡 ' + x.answer.slice(0, 180) + '\n\n' : ''}💬 ${x.answers} إجابة على Query — شارك برأيك!\n${src === 'instagram' || src === 'tiktok' ? '🔗 الرابط في البايو' : '🔗 ' + link}\n\n#Query #سؤال #${(x.name_ar || '').replace(/\s+/g, '_')} #اسأل` },
+    en: { cat: (x) => x.name_en, answer: 'Best answer', noAns: 'What do you think? Share your answer', cta: 'Answer on Query', dl: 'Get the app — link in bio', stars: 'rating',
+      cap: (x, link, src) => `❓ ${x.content}\n\n${x.answer ? '💡 ' + x.answer.slice(0, 180) + '\n\n' : ''}💬 ${x.answers} answers on Query — add yours!\n${src === 'instagram' || src === 'tiktok' ? '🔗 Link in bio' : '🔗 ' + link}\n\n#Query #AskAnything #${(x.name_en || '').replace(/\W+/g, '')} #QandA` },
+    tr: { cat: (x) => x.name_tr, answer: 'En iyi cevap', noAns: 'Sen ne düşünüyorsun? Cevabını paylaş', cta: "Query'de cevapla", dl: 'Uygulamayı indir — bağlantı biyografide', stars: 'puan',
+      cap: (x, link, src) => `❓ ${x.content}\n\n${x.answer ? '💡 ' + x.answer.slice(0, 180) + '\n\n' : ''}💬 Query'de ${x.answers} cevap — sen de yaz!\n${src === 'instagram' || src === 'tiktok' ? '🔗 Bağlantı biyografide' : '🔗 ' + link}\n\n#Query #Soru #${(x.name_tr || '').replace(/\s+/g, '')}` },
+    es: { cat: (x) => x.name_es, answer: 'Mejor respuesta', noAns: '¿Tú qué opinas? Comparte tu respuesta', cta: 'Responde en Query', dl: 'Descarga la app — enlace en la bio', stars: 'valoración',
+      cap: (x, link, src) => `❓ ${x.content}\n\n${x.answer ? '💡 ' + x.answer.slice(0, 180) + '\n\n' : ''}💬 ${x.answers} respuestas en Query — ¡añade la tuya!\n${src === 'instagram' || src === 'tiktok' ? '🔗 Enlace en la bio' : '🔗 ' + link}\n\n#Query #Pregunta #${(x.name_es || '').replace(/\s+/g, '')}` },
+  };
+  let items = []; let cur = null;
+
+  // Wrap text to width; canvas handles Arabic shaping and right-to-left automatically
+  function wrap(ctx, text, maxW, maxLines) {
+    const words = String(text || '').split(/\s+/); const lines = []; let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+      if (lines.length === maxLines) break;
+    }
+    if (lines.length < maxLines && line) lines.push(line);
+    if (lines.length === maxLines && words.join(' ').length > lines.join(' ').length) lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '') + '…';
+    return lines;
+  }
+  function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+  function draw() {
+    const cv = $('cv'); const ctx = cv.getContext('2d');
+    const fmt = $('fmt').value; const lang = $('lang').value; const T = TXT[lang]; const rtl = lang === 'ar';
+    cv.width = 1080; cv.height = fmt === 'story' ? 1920 : fmt === 'square' ? 1080 : 1350;
+    const W = cv.width, H = cv.height, F = "'IBM Plex Sans Arabic', system-ui, Tahoma, sans-serif";
+    ctx.direction = rtl ? 'rtl' : 'ltr'; ctx.textAlign = rtl ? 'right' : 'left';
+    const X = (x) => (rtl ? W - x : x); // mirror x for RTL
+    ctx.fillStyle = '#0E7490'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#1590A8'; ctx.beginPath(); ctx.arc(W - 60, 80, 330, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0B6278'; ctx.beginPath(); ctx.arc(80, H - 60, 300, 0, Math.PI * 2); ctx.fill();
+    // brand
+    ctx.save(); ctx.direction = 'ltr'; ctx.textAlign = 'left'; ctx.font = `700 76px ${F}`; ctx.fillStyle = '#fff'; ctx.fillText('Query', 80, 150);
+    ctx.fillStyle = '#F5A623'; ctx.fillText('?', 80 + ctx.measureText('Query').width, 150); ctx.restore();
+    if (!cur) return;
+    // card
+    const top = fmt === 'story' ? 330 : 230, cardH = H - top - (fmt === 'story' ? 420 : 250);
+    ctx.fillStyle = '#fff'; rr(ctx, 70, top, W - 140, cardH, 44); ctx.fill();
+    ctx.fillStyle = cur.color; ctx.beginPath(); ctx.arc(X(130), top + 90, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#475569'; ctx.font = `600 36px ${F}`; ctx.fillText(T.cat(cur) || '', X(160), top + 103);
+    let y = top + 190;
+    if (cur.product_name) { ctx.fillStyle = '#F5A623'; ctx.font = `700 50px ${F}`; ctx.fillText('★'.repeat(cur.rating) + '☆'.repeat(5 - cur.rating), X(130), y); y += 70; ctx.fillStyle = '#15202B'; ctx.font = `700 40px ${F}`; ctx.fillText(cur.product_name, X(130), y); y += 70; }
+    ctx.fillStyle = '#15202B'; ctx.font = `700 ${fmt === 'square' ? 50 : 56}px ${F}`;
+    const own = (text, fn) => { const r = /[\u0600-\u06FF]/.test(text); ctx.save(); ctx.direction = r ? 'rtl' : 'ltr'; ctx.textAlign = r ? 'right' : 'left'; fn((x) => (r ? W - x : x)); ctx.restore(); };
+    const qLines = wrap(ctx, cur.content, W - 260, fmt === 'square' ? 4 : 6);
+    own(cur.content, (XX) => qLines.forEach((l) => { ctx.fillText(l, XX(130), y); y += fmt === 'square' ? 72 : 80; }));
+    y += 20;
+    const answerSpace = top + cardH - y - 50;
+    if (answerSpace > 160) {
+      ctx.fillStyle = '#E0F7FA'; rr(ctx, 110, y, W - 220, Math.min(answerSpace, 420), 28); ctx.fill();
+      ctx.fillStyle = cur.answer ? '#16A34A' : '#0891B2'; ctx.font = `700 34px ${F}`; ctx.fillText(cur.answer ? '✓ ' + T.answer : T.noAns, X(150), y + 60);
+      if (cur.answer) { ctx.fillStyle = '#15202B'; ctx.font = `400 38px ${F}`; let ay = y + 120; const al = wrap(ctx, cur.answer, W - 320, Math.max(1, Math.floor((Math.min(answerSpace, 420) - 110) / 56))); own(cur.answer, (XX) => al.forEach((l) => { ctx.fillText(l, XX(150), ay); ay += 56; })); }
+    }
+    ctx.fillStyle = '#65758A'; ctx.font = `600 32px ${F}`; ctx.fillText(`💬 ${cur.answers}   ❤ ${cur.likes}`, X(130), top + cardH - 45);
+    // call to action
+    const cy = top + cardH + 50;
+    ctx.fillStyle = '#F5A623'; rr(ctx, 70, cy, W - 140, 110, 30); ctx.fill();
+    ctx.fillStyle = '#15202B'; ctx.font = `700 46px ${F}`; ctx.textAlign = 'center'; ctx.fillText(T.cta + (rtl ? ' ←' : ' →'), W / 2, cy + 72);
+    ctx.fillStyle = '#CFE3E7'; ctx.font = `400 32px ${F}`; ctx.fillText(T.dl, W / 2, cy + 170);
+    ctx.textAlign = rtl ? 'right' : 'left';
+    const link = `${location.origin}/go?src=${$('src').value}`;
+    $('cap').value = T.cap(cur, link, $('src').value);
+  }
+
+  function renderList() {
+    $('items').innerHTML = items.map((x, i) => `<button class="item ${cur && cur.id === x.id ? 'on' : ''}" data-i="${i}"><b>${(x.product_name ? '★' + x.rating + ' ' + x.product_name + ' — ' : '') + x.content.slice(0, 90).replace(/</g, '&lt;')}</b><br><small>${x.name_ar} · 💬 ${x.answers} · ❤ ${x.likes}</small></button>`).join('') || '<p>لا توجد أسئلة في هذه الفترة.</p>';
+  }
+  async function load() {
+    items = await api(`/api/admin/studio/items?days=${$('days').value}`);
+    cur = items[0] || null; renderList(); draw();
+  }
+  $('items').addEventListener('click', (e) => { const b = e.target.closest('.item'); if (!b) return; cur = items[+b.dataset.i]; renderList(); draw(); });
+  ['fmt', 'lang', 'src'].forEach((id) => $(id).addEventListener('change', draw));
+  $('reload').onclick = load; $('days').onchange = load;
+  $('dl').onclick = () => { const a = document.createElement('a'); a.download = `query-${cur ? cur.id : 'post'}-${$('fmt').value}-${$('lang').value}.png`; a.href = $('cv').toDataURL('image/png'); a.click(); };
+  $('copy').onclick = async () => { await navigator.clipboard.writeText($('cap').value).catch(() => {}); show('تم نسخ النص'); };
+  const show = (m, err) => { $('out').innerHTML = `<div class="msg ${err ? 'err' : ''}"></div>`; $('out').firstChild.textContent = m; };
+  async function publish(target) {
+    if (!cur) return;
+    const blob = await new Promise((r) => $('cv').toBlob(r, 'image/png'));
+    const fd = new FormData(); fd.append('image', blob, 'studio.png'); fd.append('caption', $('cap').value); fd.append('targets', target);
+    try { const r = await api('/api/admin/studio/publish', { method: 'POST', body: fd }); const res = r.result[target];
+      show(res && res.error === 'NOT_CONFIGURED' ? 'الربط مع ميتا غير مفعّل بعد — راجع docs/SOCIAL.md' : 'تم النشر ✓ ' + JSON.stringify(res), res && res.error); } catch (e) { show('تعذر النشر: ' + e.message, true); }
+  }
+  $('pubFb').onclick = () => publish('facebook'); $('pubIg').onclick = () => publish('instagram');
+
+  async function start() {
+    try { const me = await api('/api/me'); if (!me.isAdmin) throw new Error('not admin'); $('login').hidden = true; $('app').hidden = false; await (document.fonts ? document.fonts.ready : Promise.resolve()); await load(); }
+    catch { $('login').hidden = false; $('app').hidden = true; }
+  }
+  $('doLogin').onclick = async () => {
+    try { const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('em').value, password: $('pw').value }) }).then((x) => x.json());
+      if (!r.token) throw new Error(r.error); if (!r.user.isAdmin) throw new Error('هذا الحساب ليس مشرفاً'); localStorage.setItem('qtoken', r.token); start();
+    } catch (e) { $('loginMsg').innerHTML = '<div class="msg err"></div>'; $('loginMsg').firstChild.textContent = 'تعذر الدخول: ' + e.message; }
+  };
+  window.__studio = { draw, get cur() { return cur; } };
+  start();
+})();
+</script>
+</body>
+</html>

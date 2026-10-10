@@ -1,0 +1,7 @@
+{
+  "CFBundleDisplayName": "Query",
+  "NSCameraUsageDescription": "يستخدم Query الكاميرا لتصوير صور وفيديو لأسئلتك.",
+  "NSPhotoLibraryUsageDescription": "يحتاج Query إلى صورك لإرفاق صور وفيديو بالأسئلة.",
+  "NSMicrophoneUsageDescription": "يستخدم Query الميكروفون لتسجيل أسئلة وإجابات صوتية.",
+  "NSLocationWhenInUseUsageDescription": "يستخدم Query موقعك لإرفاق مكان بالسؤال وعرض الأسئلة القريبة منك."
+}
